@@ -48,15 +48,7 @@ if errorlevel 1 (
 echo [3/3] Fetching live football matches...
 echo.
 
-parik-live
+parik-live --live-only
 
-echo.
-echo ========================================
-echo.
-echo Commands you can try:
-echo   parik-live                     - all live matches (table)
-echo   parik-live --json              - JSON format
-echo   parik-live --live-only         - only matches in play
-echo   parik-live --league "Brasil"   - filter by league
 echo.
 pause

@@ -33,14 +33,4 @@ fi
 echo "[3/3] Fetching live football matches..."
 echo
 
-parik-live
-
-echo
-echo "========================================"
-echo
-echo "Commands you can try:"
-echo "  parik-live                     - all live matches (table)"
-echo "  parik-live --json              - JSON format"
-echo "  parik-live --live-only         - only matches in play"
-echo '  parik-live --league "Бразилія" - filter by league'
-echo
+parik-live --live-only
