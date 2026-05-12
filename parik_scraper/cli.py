@@ -16,7 +16,7 @@ import json
 import sys
 
 from parik_scraper.models import LiveMatch
-from parik_scraper.scraper import DEFAULT_BASE_URL, ParikScraper, ScraperError
+from parik_scraper.scraper import ParikScraper, ScraperError
 
 
 def _build_parser() -> argparse.ArgumentParser:
@@ -26,8 +26,8 @@ def _build_parser() -> argparse.ArgumentParser:
     )
     p.add_argument(
         "--url",
-        default=DEFAULT_BASE_URL,
-        help=f"Base URL of the Parik24 site (default: {DEFAULT_BASE_URL})",
+        default=None,
+        help="Base URL of the Parik24 site (auto-detect by default)",
     )
     p.add_argument(
         "--timeout",

@@ -9,7 +9,10 @@ import httpx
 from parik_scraper.models import LiveMatch
 from parik_scraper.parser import parse_parik_live_page
 
-DEFAULT_BASE_URL = "https://parik24ua.kyiv.ua"
+FALLBACK_URLS = [
+    "https://parik.club",
+    "https://parik24ua.kyiv.ua",
+]
 
 _DEFAULT_USER_AGENT = (
     "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
@@ -28,11 +31,13 @@ class ParikScraper:
     def __init__(
         self,
         *,
-        base_url: str = DEFAULT_BASE_URL,
+        base_url: str | None = None,
         timeout: float = 20.0,
     ) -> None:
-        self._base_url = base_url.rstrip("/")
-        self._live_url = f"{self._base_url}/uk/all-live"
+        if base_url:
+            self._urls = [base_url.rstrip("/")]
+        else:
+            self._urls = list(FALLBACK_URLS)
         self._timeout = timeout
         self._client: httpx.AsyncClient | None = None
 
@@ -64,7 +69,7 @@ class ParikScraper:
     async def fetch_live_matches(self) -> list[LiveMatch]:
         """Fetch and parse the live-matches page.
 
-        Returns only football matches.
+        Tries each URL in order until one succeeds.
 
         Raises:
             ScraperError: on network or parsing failures.
@@ -72,16 +77,24 @@ class ParikScraper:
         if self._client is None:
             raise ScraperError("ParikScraper is not started — call start() or use 'async with'")
 
-        try:
-            response = await self._client.get(self._live_url)
-            response.raise_for_status()
-        except httpx.HTTPStatusError as exc:
-            raise ScraperError(f"HTTP {exc.response.status_code}: {self._live_url}") from exc
-        except httpx.HTTPError as exc:
-            raise ScraperError(f"Request failed: {exc}") from exc
+        last_error: Exception | None = None
+        for base_url in self._urls:
+            live_url = f"{base_url}/uk/all-live"
+            try:
+                response = await self._client.get(live_url)
+                response.raise_for_status()
+            except httpx.HTTPStatusError as exc:
+                last_error = exc
+                continue
+            except httpx.HTTPError as exc:
+                last_error = exc
+                continue
 
-        html = response.text
-        if len(html) < 500:
-            raise ScraperError("Response body too small — page may be blocked")
+            html = response.text
+            if len(html) < 500:
+                last_error = ScraperError(f"Response too small from {base_url}")
+                continue
 
-        return parse_parik_live_page(html)
+            return parse_parik_live_page(html)
+
+        raise ScraperError(f"All URLs failed. Last error: {last_error}")
